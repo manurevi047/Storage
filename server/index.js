@@ -21,11 +21,11 @@ app.use(express.json());
 
 // Initialize Supabase client
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
 const supabaseBucket = process.env.SUPABASE_BUCKET || 'uploads';
 
 if (!supabaseUrl || !supabaseKey) {
-  console.error('Missing SUPABASE_URL or SUPABASE_KEY environment variables');
+  console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_KEY environment variables');
   process.exit(1);
 }
 
