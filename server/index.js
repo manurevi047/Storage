@@ -96,6 +96,78 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });
 });
 
+// Dodo Payments checkout endpoint (protected)
+app.post('/api/create-checkout', verifyAuth, async (req, res) => {
+  try {
+    const user = req.user;
+    const dodoApiKey = process.env.DODO_PAYMENTS_API_KEY;
+    const productId = process.env.DODO_PRODUCT_ID;
+
+    if (!dodoApiKey || !productId) {
+      console.error('Missing DODO_PAYMENTS_API_KEY or DODO_PRODUCT_ID');
+      return res.status(500).json({ 
+        error: 'Payment system not configured',
+        details: 'Contact administrator'
+      });
+    }
+
+    console.log('🛒 Creating checkout session for user:', user.email);
+
+    // Create checkout session with Dodo Payments
+    const response = await fetch('https://test.dodopayments.com/checkouts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${dodoApiKey}`
+      },
+      body: JSON.stringify({
+        product_cart: [
+          {
+            product_id: productId,
+            quantity: 1
+          }
+        ],
+        customer: {
+          email: user.email,
+          name: user.user_metadata?.username || user.email.split('@')[0]
+        },
+        return_url: `${process.env.APP_URL || 'http://localhost:3001'}/payment-success`,
+        metadata: {
+          user_id: user.id,
+          user_email: user.email,
+          timestamp: new Date().toISOString()
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('❌ Dodo Payments API error:', response.status, errorData);
+      return res.status(response.status).json({
+        error: 'Failed to create checkout session',
+        details: errorData.message || 'Payment service error'
+      });
+    }
+
+    const session = await response.json();
+    
+    console.log('✅ Checkout session created:', session.session_id);
+    
+    res.json({
+      success: true,
+      checkout_url: session.checkout_url,
+      session_id: session.session_id
+    });
+
+  } catch (error) {
+    console.error('💥 Checkout creation error:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      details: error.message
+    });
+  }
+});
+
 // File upload endpoint (protected)
 app.post('/api/upload', verifyAuth, upload.single('file'), async (req, res) => {
   try {

@@ -1,7 +1,8 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useAuth } from './contexts/AuthContext'
 import { supabase } from './lib/supabase'
 import Auth from './components/Auth'
+import PaymentSuccess from './PaymentSuccess'
 import './App.css'
 
 function App() {
@@ -11,7 +12,16 @@ function App() {
   const [uploadedFiles, setUploadedFiles] = useState([])
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
+  const [showPaymentSuccess, setShowPaymentSuccess] = useState(false)
   const fileInputRef = useRef(null)
+
+  // Check if returning from payment
+  useEffect(() => {
+    const path = window.location.pathname
+    if (path === '/payment-success') {
+      setShowPaymentSuccess(true)
+    }
+  }, [])
 
   // Show auth screen if not authenticated
   if (authLoading) {
@@ -24,6 +34,11 @@ function App() {
 
   if (!user) {
     return <Auth />
+  }
+
+  // Show payment success page
+  if (showPaymentSuccess) {
+    return <PaymentSuccess />
   }
 
   const handleFileSelect = (event) => {
@@ -91,6 +106,42 @@ function App() {
     await signOut()
   }
 
+  const handleUpgradeToPremium = async () => {
+    try {
+      setError(null)
+      
+      // Get the user's session token
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!session) {
+        setError('Not authenticated')
+        return
+      }
+
+      const response = await fetch('/api/create-checkout', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create checkout')
+      }
+
+      // Redirect to Dodo Payments checkout
+      console.log('Redirecting to checkout:', data.checkout_url)
+      window.location.href = data.checkout_url
+
+    } catch (err) {
+      console.error('Checkout error:', err)
+      setError(err.message || 'Failed to initiate payment')
+    }
+  }
+
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes'
     const k = 1024
@@ -131,6 +182,9 @@ function App() {
           
           <div className="user-info">
             <span className="user-email">👤 {user.email}</span>
+            <button onClick={handleUpgradeToPremium} className="premium-button">
+              ⭐ Upgrade to Premium
+            </button>
             <button onClick={handleSignOut} className="sign-out-button">
               Sign Out
             </button>
