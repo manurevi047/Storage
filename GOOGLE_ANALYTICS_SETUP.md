@@ -18,17 +18,23 @@ Your app now includes **Google Analytics 4** tracking! 📊
 
 ## 🔧 Environment Variable Setup
 
-Your tracking ID `G-0BQH3K548R` is already configured in the code!
-
 ### For Render Deployment:
 
-The `render.yaml` already includes:
-```yaml
-- key: GA_TRACKING_ID
-  value: G-0BQH3K548R
-```
+Add this environment variable in your Render dashboard:
 
-**You don't need to add this manually** - it's already in the deployment config!
+| Variable | Value |
+|----------|-------|
+| `GA_TRACKING_ID` | `G-0BQH3K548R` |
+
+**How to add:**
+1. Go to your Render service
+2. Click **Environment** tab
+3. Click **Add Environment Variable**
+4. Key: `GA_TRACKING_ID`
+5. Value: `G-0BQH3K548R`
+6. Click **Save Changes**
+
+Render will automatically redeploy with the new variable.
 
 ### For Local Development:
 
@@ -279,12 +285,20 @@ if (userHasConsented) {
 
 ---
 
-## ✅ Current Configuration
+## ✅ Setup Summary
 
-Your tracking ID `G-0BQH3K548R` is already set up in:
-- ✅ `render.yaml` - Will deploy automatically
-- ✅ `analytics.js` - Loads dynamically
-- ✅ All components - Track relevant events
+To enable Google Analytics:
 
-**No additional configuration needed!** Just deploy to Render and your analytics will work automatically. 📊🎉
+1. **Add environment variable in Render:**
+   - Key: `GA_TRACKING_ID`
+   - Value: `G-0BQH3K548R`
+
+2. **Redeploy your app** (automatic after saving env var)
+
+3. **Analytics will load automatically:**
+   - ✅ `analytics.js` - Loads dynamically
+   - ✅ All components - Track relevant events
+   - ✅ Build passes variable to frontend
+
+That's it! Your analytics will work automatically. 📊🎉
 

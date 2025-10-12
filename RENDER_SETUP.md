@@ -1,8 +1,8 @@
 # Render Setup Guide - Single Unified Deployment
 
-## 🎯 Quick Setup (4 Environment Variables)
+## 🎯 Quick Setup (8 Environment Variables)
 
-In Render dashboard → Your Service → **Environment** tab, add these **4 variables**:
+In Render dashboard → Your Service → **Environment** tab, add these **8 variables**:
 
 | Variable Name | Value | Where to Find |
 |---------------|-------|---------------|
@@ -10,6 +10,10 @@ In Render dashboard → Your Service → **Environment** tab, add these **4 vari
 | `SUPABASE_SERVICE_KEY` | Your service_role key | Supabase → Settings → API → service_role (secret) |
 | `SUPABASE_ANON_KEY` | Your anon public key | Supabase → Settings → API → anon public |
 | `SUPABASE_BUCKET` | `uploads` | Your bucket name in Storage |
+| `DODO_PAYMENTS_API_KEY` | Your Dodo API key | Dodo Dashboard → Settings → API Keys |
+| `DODO_PRODUCT_ID` | Your product ID | Dodo Dashboard → Products |
+| `GA_TRACKING_ID` | `G-0BQH3K548R` | Your Google Analytics tracking ID |
+| `APP_URL` | `https://your-app.onrender.com` | Your Render app URL |
 
 ---
 
