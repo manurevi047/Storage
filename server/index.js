@@ -29,7 +29,17 @@ if (!supabaseUrl || !supabaseKey) {
   process.exit(1);
 }
 
+// Validate Supabase URL format
+if (supabaseUrl.includes('/storage/v1/s3')) {
+  console.error('❌ ERROR: SUPABASE_URL should be your project URL, not the storage endpoint!');
+  console.error('Expected format: https://YOUR_PROJECT_REF.supabase.co');
+  console.error('Current value:', supabaseUrl);
+  console.error('Remove ".storage" and "/storage/v1/s3" from the URL');
+  process.exit(1);
+}
+
 const supabase = createClient(supabaseUrl, supabaseKey);
+console.log('✅ Supabase client initialized with URL:', supabaseUrl);
 
 // Configure multer for temporary file storage
 const storage = multer.diskStorage({
@@ -66,11 +76,15 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     }
 
     const file = req.file;
+    console.log('📤 Uploading file:', file.originalname, 'Size:', file.size, 'bytes');
+    
     const fileBuffer = fs.readFileSync(file.path);
     
     // Generate a unique filename
     const timestamp = Date.now();
     const fileName = `${timestamp}-${file.originalname}`;
+    
+    console.log('📦 Uploading to bucket:', supabaseBucket);
     
     // Upload to Supabase Storage
     const { data, error } = await supabase.storage
@@ -85,12 +99,16 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     fs.unlinkSync(file.path);
 
     if (error) {
-      console.error('Supabase upload error:', error);
+      console.error('❌ Supabase upload error:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
       return res.status(500).json({ 
         error: 'Failed to upload file to storage',
-        details: error.message 
+        details: error.message,
+        hint: 'Check that the bucket exists and you have the correct permissions'
       });
     }
+
+    console.log('✅ File uploaded successfully:', fileName);
 
     // Get public URL
     const { data: publicData } = supabase.storage

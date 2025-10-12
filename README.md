@@ -54,9 +54,14 @@ A modern, full-stack web application for uploading files to Supabase storage. Bu
    PORT=3001
    ```
 
+   **🚨 IMPORTANT - Use the Correct URLs:**
+   - ❌ **WRONG**: `https://kylvaxbcvovxjeutrcds.storage.supabase.co/storage/v1/s3` (storage endpoint)
+   - ✅ **CORRECT**: `https://kylvaxbcvovxjeutrcds.supabase.co` (project URL)
+   
    **For Render deployment:**
    - Add these environment variables in your Render dashboard
-   - The `SUPABASE_KEY` should be your Supabase service role key or anon key
+   - The `SUPABASE_KEY` should be your Supabase **service_role** key (not anon key)
+   - Find these in: Supabase Dashboard → Settings → API
 
 4. **Configure Supabase Storage:**
    - Go to your Supabase project dashboard
@@ -211,10 +216,12 @@ file-upload-app/
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `SUPABASE_URL` | Your Supabase project URL | `https://xxxxx.supabase.co` |
-| `SUPABASE_KEY` | Supabase API key (anon or service role) | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` |
+| `SUPABASE_URL` | Your Supabase **project URL** (NOT storage endpoint) | `https://xxxxx.supabase.co` |
+| `SUPABASE_KEY` | Supabase **service_role** key | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` |
 | `SUPABASE_BUCKET` | Storage bucket name | `uploads` |
 | `PORT` | Backend server port | `3001` |
+
+**📖 For detailed Supabase setup instructions, see [SUPABASE_SETUP.md](SUPABASE_SETUP.md)**
 
 ## Security Considerations
 
