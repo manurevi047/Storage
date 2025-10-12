@@ -19,13 +19,6 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-// Serve static files from the React app (for production)
-const clientBuildPath = join(__dirname, '../client/dist');
-if (fs.existsSync(clientBuildPath)) {
-  app.use(express.static(clientBuildPath));
-  console.log('Serving static files from:', clientBuildPath);
-}
-
 // Initialize Supabase client
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
@@ -168,6 +161,14 @@ app.get('/api/files', async (req, res) => {
     });
   }
 });
+
+// Serve static files from the React app (for production)
+// Important: Place AFTER API routes so API takes precedence
+const clientBuildPath = join(__dirname, '../client/dist');
+if (fs.existsSync(clientBuildPath)) {
+  app.use(express.static(clientBuildPath));
+  console.log('Serving static files from:', clientBuildPath);
+}
 
 // Catch-all handler: serve index.html for any route not matched above (for React Router)
 app.get('*', (req, res) => {
