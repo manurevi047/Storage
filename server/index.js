@@ -4,7 +4,7 @@ import multer from 'multer';
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
 import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import { dirname, join } from 'path';
 import fs from 'fs';
 
 dotenv.config();
@@ -18,6 +18,13 @@ const PORT = process.env.PORT || 3001;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Serve static files from the React app (for production)
+const clientBuildPath = join(__dirname, '../client/dist');
+if (fs.existsSync(clientBuildPath)) {
+  app.use(express.static(clientBuildPath));
+  console.log('Serving static files from:', clientBuildPath);
+}
 
 // Initialize Supabase client
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -158,6 +165,18 @@ app.get('/api/files', async (req, res) => {
     res.status(500).json({ 
       error: 'Failed to fetch files',
       details: error.message 
+    });
+  }
+});
+
+// Catch-all handler: serve index.html for any route not matched above (for React Router)
+app.get('*', (req, res) => {
+  const indexPath = join(__dirname, '../client/dist/index.html');
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(404).json({ 
+      error: 'Frontend not built. Run "npm run build" in the client directory.' 
     });
   }
 });
