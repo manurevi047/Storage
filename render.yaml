@@ -2,7 +2,7 @@ services:
   - type: web
     name: file-upload-app
     env: node
-    buildCommand: npm install && cd client && npm install && VITE_SUPABASE_URL=$SUPABASE_URL VITE_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY npm run build && cd ..
+    buildCommand: npm install && cd client && npm install && VITE_SUPABASE_URL=$SUPABASE_URL VITE_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY VITE_GA_TRACKING_ID=$GA_TRACKING_ID npm run build && cd ..
     startCommand: npm run server
     envVars:
       - key: NODE_VERSION
@@ -19,6 +19,8 @@ services:
         sync: false
       - key: DODO_PRODUCT_ID
         sync: false
+      - key: GA_TRACKING_ID
+        value: G-0BQH3K548R
       - key: APP_URL
         sync: false
 

@@ -3,6 +3,7 @@ import { useAuth } from './contexts/AuthContext'
 import { supabase } from './lib/supabase'
 import Auth from './components/Auth'
 import PaymentSuccess from './PaymentSuccess'
+import { trackEvent } from './analytics'
 import './App.css'
 
 function App() {
@@ -89,6 +90,12 @@ function App() {
         throw new Error(data.error || 'Upload failed')
       }
 
+      // Track successful upload
+      trackEvent('file_upload', {
+        file_size: selectedFile.size,
+        file_type: selectedFile.type
+      })
+
       setSuccess(`File "${selectedFile.name}" uploaded successfully!`)
       setUploadedFiles([data.file, ...uploadedFiles])
       setSelectedFile(null)
@@ -97,6 +104,11 @@ function App() {
       }
     } catch (err) {
       setError(err.message || 'Failed to upload file')
+      
+      // Track upload error
+      trackEvent('file_upload_error', {
+        error: err.message
+      })
     } finally {
       setUploading(false)
     }
@@ -109,6 +121,9 @@ function App() {
   const handleUpgradeToPremium = async () => {
     try {
       setError(null)
+      
+      // Track upgrade button click
+      trackEvent('upgrade_button_clicked')
       
       // Get the user's session token
       const { data: { session } } = await supabase.auth.getSession()
@@ -132,6 +147,11 @@ function App() {
         throw new Error(data.error || 'Failed to create checkout')
       }
 
+      // Track checkout initiation
+      trackEvent('checkout_initiated', {
+        session_id: data.session_id
+      })
+
       // Redirect to Dodo Payments checkout
       console.log('Redirecting to checkout:', data.checkout_url)
       window.location.href = data.checkout_url
@@ -139,6 +159,11 @@ function App() {
     } catch (err) {
       console.error('Checkout error:', err)
       setError(err.message || 'Failed to initiate payment')
+      
+      // Track checkout error
+      trackEvent('checkout_error', {
+        error: err.message
+      })
     }
   }
 

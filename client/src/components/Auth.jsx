@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { trackEvent } from '../analytics'
 import './Auth.css'
 
 export default function Auth() {
@@ -42,6 +43,12 @@ export default function Auth() {
       if (isSignUp) {
         const { error } = await signUp(email, password, { username })
         if (error) throw error
+        
+        // Track signup
+        trackEvent('sign_up', {
+          method: 'email'
+        })
+        
         setSuccess('Account created! Please check your email to verify your account.')
         setEmail('')
         setPassword('')
@@ -49,10 +56,21 @@ export default function Auth() {
       } else {
         const { error } = await signIn(email, password)
         if (error) throw error
+        
+        // Track login
+        trackEvent('login', {
+          method: 'email'
+        })
+        
         setSuccess('Signed in successfully!')
       }
     } catch (err) {
       setError(err.message || 'Authentication failed')
+      
+      // Track auth error
+      trackEvent(isSignUp ? 'sign_up_error' : 'login_error', {
+        error: err.message
+      })
     } finally {
       setLoading(false)
     }

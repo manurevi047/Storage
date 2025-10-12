@@ -1,8 +1,15 @@
 import { useEffect } from 'react'
+import { trackEvent } from './analytics'
 import './PaymentSuccess.css'
 
 export default function PaymentSuccess() {
   useEffect(() => {
+    // Track successful payment
+    trackEvent('purchase', {
+      currency: 'USD',
+      transaction_id: new Date().getTime().toString()
+    })
+    
     // Auto-redirect to home after 5 seconds
     const timer = setTimeout(() => {
       window.location.href = '/'
