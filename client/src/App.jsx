@@ -1,13 +1,30 @@
 import { useState, useRef } from 'react'
+import { useAuth } from './contexts/AuthContext'
+import { supabase } from './lib/supabase'
+import Auth from './components/Auth'
 import './App.css'
 
 function App() {
+  const { user, loading: authLoading, signOut } = useAuth()
   const [selectedFile, setSelectedFile] = useState(null)
   const [uploading, setUploading] = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState([])
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
   const fileInputRef = useRef(null)
+
+  // Show auth screen if not authenticated
+  if (authLoading) {
+    return (
+      <div className="app loading-screen">
+        <div className="loading-spinner">Loading...</div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return <Auth />
+  }
 
   const handleFileSelect = (event) => {
     const file = event.target.files[0]
@@ -36,8 +53,18 @@ function App() {
     formData.append('file', selectedFile)
 
     try {
+      // Get the user's session token
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!session) {
+        throw new Error('Not authenticated')
+      }
+
       const response = await fetch('/api/upload', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        },
         body: formData,
       })
 
@@ -58,6 +85,10 @@ function App() {
     } finally {
       setUploading(false)
     }
+  }
+
+  const handleSignOut = async () => {
+    await signOut()
   }
 
   const formatFileSize = (bytes) => {
@@ -97,6 +128,13 @@ function App() {
             <h1>File Upload</h1>
           </div>
           <p className="subtitle">Upload any file to secure cloud storage</p>
+          
+          <div className="user-info">
+            <span className="user-email">👤 {user.email}</span>
+            <button onClick={handleSignOut} className="sign-out-button">
+              Sign Out
+            </button>
+          </div>
         </header>
 
         <div className="upload-section">

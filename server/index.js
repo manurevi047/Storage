@@ -41,6 +41,34 @@ if (supabaseUrl.includes('/storage/v1/s3')) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 console.log('✅ Supabase client initialized with URL:', supabaseUrl);
 
+// Middleware to verify JWT token
+const verifyAuth = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No authorization token provided' });
+    }
+
+    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    
+    // Verify the JWT token with Supabase
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error || !user) {
+      console.error('Auth verification failed:', error);
+      return res.status(401).json({ error: 'Invalid or expired token' });
+    }
+    
+    // Attach user to request object
+    req.user = user;
+    next();
+  } catch (error) {
+    console.error('Auth middleware error:', error);
+    return res.status(401).json({ error: 'Authentication failed' });
+  }
+};
+
 // Configure multer for temporary file storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -68,23 +96,27 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });
 });
 
-// File upload endpoint
-app.post('/api/upload', upload.single('file'), async (req, res) => {
+// File upload endpoint (protected)
+app.post('/api/upload', verifyAuth, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file provided' });
     }
 
     const file = req.file;
+    const userId = req.user.id;
+    const userEmail = req.user.email;
+    
     console.log('📤 Uploading file:', file.originalname, 'Size:', file.size, 'bytes');
+    console.log('👤 User:', userEmail);
     
     const fileBuffer = fs.readFileSync(file.path);
     
-    // Generate a unique filename
+    // Generate a unique filename with user folder structure
     const timestamp = Date.now();
-    const fileName = `${timestamp}-${file.originalname}`;
+    const fileName = `${userId}/${timestamp}-${file.originalname}`;
     
-    console.log('📦 Uploading to bucket:', supabaseBucket);
+    console.log('📦 Uploading to bucket:', supabaseBucket, 'Path:', fileName);
     
     // Upload to Supabase Storage
     const { data, error } = await supabase.storage
@@ -142,12 +174,15 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
   }
 });
 
-// Get list of uploaded files
-app.get('/api/files', async (req, res) => {
+// Get list of uploaded files (protected)
+app.get('/api/files', verifyAuth, async (req, res) => {
   try {
+    const userId = req.user.id;
+    
+    // List files only for the authenticated user
     const { data, error } = await supabase.storage
       .from(supabaseBucket)
-      .list('', {
+      .list(userId, {
         limit: 100,
         sortBy: { column: 'created_at', order: 'desc' }
       });
