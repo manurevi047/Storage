@@ -1,7 +1,7 @@
-// Google Analytics Integration
-const GA_TRACKING_ID = import.meta.env.VITE_GA_TRACKING_ID || import.meta.env.GA_TRACKING_ID
+// Google Tag Manager Integration
+const GA_TRACKING_ID = import.meta.env.VITE_GA_TRACKING_ID || import.meta.env.GA_TRACKING_ID || 'G-Q7TB2EYX0F'
 
-// Only load Google Analytics if tracking ID is provided
+// Only load Google Tag Manager if tracking ID is provided
 if (GA_TRACKING_ID) {
   // Load gtag.js script
   const script = document.createElement('script')
@@ -19,9 +19,9 @@ if (GA_TRACKING_ID) {
   gtag('js', new Date())
   gtag('config', GA_TRACKING_ID)
 
-  console.log('✅ Google Analytics initialized with ID:', GA_TRACKING_ID)
+  console.log('✅ Google Tag Manager initialized with ID:', GA_TRACKING_ID)
 } else {
-  console.log('ℹ️ Google Analytics not initialized (no tracking ID provided)')
+  console.log('ℹ️ Google Tag Manager not initialized (no tracking ID provided)')
 }
 
 // Helper function to track custom events
