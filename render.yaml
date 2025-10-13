@@ -20,7 +20,7 @@ services:
       - key: DODO_PRODUCT_ID
         sync: false
       - key: GA_TRACKING_ID
-        sync: false
+        value: G-Q7TB2EYX0F
       - key: APP_URL
         sync: false
 
