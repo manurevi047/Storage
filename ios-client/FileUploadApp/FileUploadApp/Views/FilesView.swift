@@ -52,18 +52,14 @@ struct FilesView: View {
                     }
                 }
             }
-            .navigationTitle("Files")
+            .navigationTitle("Files (\(files.count))")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Test") {
-                        Task {
-                            let success = await supabaseManager.testSupabaseConnection()
-                            await MainActor.run {
-                                alertMessage = success ? "Supabase connection successful!" : "Supabase connection failed. Check console logs."
-                                showingAlert = true
-                            }
-                        }
+                    Button(action: {
+                        loadFiles()
+                    }) {
+                        Image(systemName: "arrow.clockwise")
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {

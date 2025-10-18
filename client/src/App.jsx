@@ -592,7 +592,7 @@ function App() {
 
         <div className="files-section">
           <div className="section-header">
-            <h2>All Your Files</h2>
+            <h2>All Your Files ({allUserFiles.length})</h2>
             <button 
               onClick={fetchAllUserFiles} 
               className="refresh-button"
@@ -657,13 +657,22 @@ function App() {
         {/* Notes Section */}
         <div className="notes-section">
           <div className="section-header">
-            <h2>📝 Notes</h2>
-            <button 
-              onClick={() => setShowAddNote(true)} 
-              className="add-note-button"
-            >
-              + Add Note
-            </button>
+            <h2>📝 Notes ({notes.length})</h2>
+            <div className="section-actions">
+              <button 
+                onClick={fetchNotes} 
+                className="refresh-button"
+                disabled={loadingNotes}
+              >
+                {loadingNotes ? '🔄' : '🔄'} Refresh
+              </button>
+              <button 
+                onClick={() => setShowAddNote(true)} 
+                className="add-note-button"
+              >
+                + Add Note
+              </button>
+            </div>
           </div>
           
           {loadingNotes ? (
