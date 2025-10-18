@@ -16,6 +16,7 @@ function App() {
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
   const [showPaymentSuccess, setShowPaymentSuccess] = useState(false)
+  const [previewFile, setPreviewFile] = useState(null)
   const fileInputRef = useRef(null)
 
   // Check if returning from payment
@@ -222,12 +223,24 @@ function App() {
   }
 
   const getFileIcon = (type) => {
+    // Handle MIME types (from uploaded files)
     if (type?.startsWith('image/')) return '🖼️'
     if (type?.startsWith('video/')) return '🎥'
     if (type?.startsWith('audio/')) return '🎵'
     if (type?.includes('pdf')) return '📄'
     if (type?.includes('text')) return '📝'
     if (type?.includes('zip') || type?.includes('rar')) return '📦'
+    
+    // Handle file type strings (from filename detection)
+    if (type === 'image') return '🖼️'
+    if (type === 'video') return '🎥'
+    if (type === 'audio') return '🎵'
+    if (type === 'pdf') return '📄'
+    if (type === 'text') return '📝'
+    if (type === 'archive') return '📦'
+    if (type === 'document') return '📄'
+    if (type === 'code') return '💻'
+    
     return '📎'
   }
 
@@ -245,13 +258,53 @@ function App() {
 
   const getFileTypeFromName = (fileName) => {
     const ext = fileName.toLowerCase().split('.').pop()
-    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'].includes(ext)) return 'image'
-    if (['mp4', 'mov', 'avi', 'mkv', 'wmv', 'flv', 'webm'].includes(ext)) return 'video'
-    if (['mp3', 'wav', 'aac', 'flac', 'ogg', 'm4a'].includes(ext)) return 'audio'
+    
+    // Image files
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'ico', 'tiff', 'tif'].includes(ext)) return 'image'
+    
+    // Video files
+    if (['mp4', 'mov', 'avi', 'mkv', 'wmv', 'flv', 'webm', 'm4v', '3gp', 'ogv'].includes(ext)) return 'video'
+    
+    // Audio files
+    if (['mp3', 'wav', 'aac', 'flac', 'ogg', 'm4a', 'wma', 'opus', 'aiff'].includes(ext)) return 'audio'
+    
+    // PDF files
     if (ext === 'pdf') return 'pdf'
-    if (['txt', 'md', 'rtf'].includes(ext)) return 'text'
-    if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) return 'archive'
+    
+    // Text files
+    if (['txt', 'md', 'rtf', 'log', 'csv', 'json', 'xml', 'yaml', 'yml'].includes(ext)) return 'text'
+    
+    // Archive files
+    if (['zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'xz', 'tar.gz', 'tar.bz2'].includes(ext)) return 'archive'
+    
+    // Document files
+    if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'odt', 'ods', 'odp'].includes(ext)) return 'document'
+    
+    // Code files
+    if (['js', 'ts', 'jsx', 'tsx', 'html', 'css', 'scss', 'sass', 'less', 'py', 'java', 'cpp', 'c', 'php', 'rb', 'go', 'rs', 'swift', 'kt'].includes(ext)) return 'code'
+    
     return 'document'
+  }
+
+  const handleFilePreview = (file) => {
+    const originalName = extractOriginalFileName(file.name)
+    const fileType = getFileTypeFromName(originalName)
+    
+    // Only show preview for images and videos
+    if (fileType === 'image' || fileType === 'video') {
+      setPreviewFile({
+        url: file.url,
+        name: originalName,
+        type: fileType
+      })
+    } else {
+      // For other file types, open in new tab
+      window.open(file.url, '_blank', 'noopener,noreferrer')
+    }
+  }
+
+  const closePreview = () => {
+    setPreviewFile(null)
   }
 
   return (
@@ -408,14 +461,12 @@ function App() {
                         )}
                       </div>
                     </div>
-                    <a 
-                      href={file.url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
+                    <button 
+                      onClick={() => handleFilePreview(file)}
                       className="view-link"
                     >
                       View
-                    </a>
+                    </button>
                   </div>
                 )
               })}
@@ -428,6 +479,45 @@ function App() {
             </div>
           )}
         </div>
+
+        {/* File Preview Modal */}
+        {previewFile && (
+          <div className="preview-modal" onClick={closePreview}>
+            <div className="preview-content" onClick={(e) => e.stopPropagation()}>
+              <div className="preview-header">
+                <h3>{previewFile.name}</h3>
+                <button onClick={closePreview} className="close-button">×</button>
+              </div>
+              <div className="preview-body">
+                {previewFile.type === 'image' ? (
+                  <img 
+                    src={previewFile.url} 
+                    alt={previewFile.name}
+                    className="preview-image"
+                  />
+                ) : previewFile.type === 'video' ? (
+                  <video 
+                    src={previewFile.url} 
+                    controls
+                    className="preview-video"
+                  >
+                    Your browser does not support video playback.
+                  </video>
+                ) : null}
+              </div>
+              <div className="preview-footer">
+                <a 
+                  href={previewFile.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="download-link"
+                >
+                  Open in New Tab
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
