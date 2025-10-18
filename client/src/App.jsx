@@ -314,7 +314,11 @@ function App() {
 
   // File deletion function
   const deleteFile = async (file) => {
-    if (!confirm(`Are you sure you want to delete "${extractOriginalFileName(file.name)}"?`)) {
+    const originalName = extractOriginalFileName(file.name)
+    console.log('🗑️ Web App: Deleting file:', originalName)
+    console.log('🗑️ Web App: File path:', file.name)
+    
+    if (!confirm(`Are you sure you want to delete "${originalName}"?`)) {
       return
     }
 
@@ -325,6 +329,7 @@ function App() {
         throw new Error('Not authenticated')
       }
 
+      console.log('🗑️ Web App: Calling delete API with path:', file.name)
       const response = await fetch(`/api/files/${encodeURIComponent(file.name)}`, {
         method: 'DELETE',
         headers: {
@@ -332,17 +337,22 @@ function App() {
         }
       })
 
+      console.log('🗑️ Web App: Delete response status:', response.status)
+      
       if (!response.ok) {
         const data = await response.json()
+        console.error('🗑️ Web App: Delete failed:', data)
         throw new Error(data.error || 'Failed to delete file')
       }
 
+      console.log('🗑️ Web App: File deleted successfully')
+      
       // Remove file from local state
       setAllUserFiles(allUserFiles.filter(f => f.name !== file.name))
       setUploadedFiles(uploadedFiles.filter(f => f.name !== file.name))
-      setSuccess(`File "${extractOriginalFileName(file.name)}" deleted successfully!`)
+      setSuccess(`File "${originalName}" deleted successfully!`)
     } catch (err) {
-      console.error('Error deleting file:', err)
+      console.error('🗑️ Web App: Error deleting file:', err)
       setError(err.message || 'Failed to delete file')
     }
   }

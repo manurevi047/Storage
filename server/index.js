@@ -295,8 +295,12 @@ app.delete('/api/files/:filename', verifyAuth, async (req, res) => {
     const userId = req.user.id;
     const filename = decodeURIComponent(req.params.filename);
     
+    console.log('🗑️ Server: Delete request for filename:', filename);
+    console.log('🗑️ Server: User ID:', userId);
+    
     // Construct the full path: userId/filename
     const fullPath = `${userId}/${filename}`;
+    console.log('🗑️ Server: Full path to delete:', fullPath);
     
     // Delete from Supabase Storage
     const { error } = await supabase.storage
@@ -304,13 +308,15 @@ app.delete('/api/files/:filename', verifyAuth, async (req, res) => {
       .remove([fullPath]);
 
     if (error) {
+      console.error('🗑️ Server: Supabase delete error:', error);
       throw error;
     }
 
+    console.log('🗑️ Server: File deleted successfully from Supabase Storage');
     res.json({ success: true });
 
   } catch (error) {
-    console.error('Error deleting file:', error);
+    console.error('🗑️ Server: Error deleting file:', error);
     res.status(500).json({ 
       error: 'Failed to delete file',
       details: error.message 
