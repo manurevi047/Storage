@@ -20,13 +20,13 @@ app.use(cors());
 app.use(express.json());
 
 // Initialize Supabase client
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+const supabaseUrl = process.env.SUPABASE_URL || 'https://kylvaxbcvovxjeutrcds.supabase.co';
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY || 'placeholder_key';
 const supabaseBucket = process.env.SUPABASE_BUCKET || 'uploads';
 
-if (!supabaseUrl || !supabaseKey) {
-  console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_KEY environment variables');
-  process.exit(1);
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
+  console.warn('⚠️  Using placeholder Supabase configuration for local development');
+  console.warn('⚠️  Set SUPABASE_URL and SUPABASE_SERVICE_KEY environment variables for production');
 }
 
 // Validate Supabase URL format
