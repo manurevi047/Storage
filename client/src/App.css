@@ -380,6 +380,29 @@
   color: #6b7280;
 }
 
+.file-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.delete-file-button {
+  background: #fef2f2;
+  color: #dc2626;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.delete-file-button:hover {
+  background: #fee2e2;
+  transform: translateY(-1px);
+}
+
 .loading-files {
   display: flex;
   align-items: center;

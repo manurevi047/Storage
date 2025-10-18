@@ -312,6 +312,41 @@ function App() {
     setPreviewFile(null)
   }
 
+  // File deletion function
+  const deleteFile = async (file) => {
+    if (!confirm(`Are you sure you want to delete "${extractOriginalFileName(file.name)}"?`)) {
+      return
+    }
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!session) {
+        throw new Error('Not authenticated')
+      }
+
+      const response = await fetch(`/api/files/${encodeURIComponent(file.name)}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to delete file')
+      }
+
+      // Remove file from local state
+      setAllUserFiles(allUserFiles.filter(f => f.name !== file.name))
+      setUploadedFiles(uploadedFiles.filter(f => f.name !== file.name))
+      setSuccess(`File "${extractOriginalFileName(file.name)}" deleted successfully!`)
+    } catch (err) {
+      console.error('Error deleting file:', err)
+      setError(err.message || 'Failed to delete file')
+    }
+  }
+
   // Notes functions
   const fetchNotes = async () => {
     try {
@@ -592,12 +627,20 @@ function App() {
                         )}
                       </div>
                     </div>
-                    <button 
-                      onClick={() => handleFilePreview(file)}
-                      className="view-link"
-                    >
-                      View
-                    </button>
+                    <div className="file-actions">
+                      <button 
+                        onClick={() => handleFilePreview(file)}
+                        className="view-link"
+                      >
+                        View
+                      </button>
+                      <button 
+                        onClick={() => deleteFile(file)}
+                        className="delete-file-button"
+                      >
+                        🗑️ Delete
+                      </button>
+                    </div>
                   </div>
                 )
               })}

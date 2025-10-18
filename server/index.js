@@ -289,6 +289,35 @@ app.get('/api/files', verifyAuth, async (req, res) => {
   }
 });
 
+// Delete file endpoint
+app.delete('/api/files/:filename', verifyAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const filename = decodeURIComponent(req.params.filename);
+    
+    // Construct the full path: userId/filename
+    const fullPath = `${userId}/${filename}`;
+    
+    // Delete from Supabase Storage
+    const { error } = await supabase.storage
+      .from(supabaseBucket)
+      .remove([fullPath]);
+
+    if (error) {
+      throw error;
+    }
+
+    res.json({ success: true });
+
+  } catch (error) {
+    console.error('Error deleting file:', error);
+    res.status(500).json({ 
+      error: 'Failed to delete file',
+      details: error.message 
+    });
+  }
+});
+
 // Notes API endpoints
 app.get('/api/notes', verifyAuth, async (req, res) => {
   try {
