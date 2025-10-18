@@ -417,7 +417,8 @@ class SupabaseManager: ObservableObject {
                 return items
             }
             
-            return fileItems
+            // Sort files by creation date (newest first) - same as web app
+            return fileItems.sorted { $0.createdAt > $1.createdAt }
         } catch {
             await MainActor.run {
                 self.errorMessage = error.localizedDescription
