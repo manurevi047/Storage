@@ -264,12 +264,14 @@ app.get('/api/files', verifyAuth, async (req, res) => {
     }
 
     const filesWithUrls = data.map(file => {
+      // Construct the full path: userId/filename
+      const fullPath = `${userId}/${file.name}`;
       const { data: publicData } = supabase.storage
         .from(supabaseBucket)
-        .getPublicUrl(file.name);
+        .getPublicUrl(fullPath);
       
       return {
-        name: file.name,
+        name: fullPath, // Store the full path for consistency
         size: file.metadata?.size,
         createdAt: file.created_at,
         url: publicData.publicUrl
