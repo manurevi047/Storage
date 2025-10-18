@@ -11,6 +11,8 @@ function App() {
   const [selectedFile, setSelectedFile] = useState(null)
   const [uploading, setUploading] = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState([])
+  const [allUserFiles, setAllUserFiles] = useState([])
+  const [loadingFiles, setLoadingFiles] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
   const [showPaymentSuccess, setShowPaymentSuccess] = useState(false)
@@ -23,6 +25,47 @@ function App() {
       setShowPaymentSuccess(true)
     }
   }, [])
+
+  // Fetch all user files when component mounts
+  useEffect(() => {
+    if (user) {
+      fetchAllUserFiles()
+    }
+  }, [user])
+
+  const fetchAllUserFiles = async () => {
+    try {
+      setLoadingFiles(true)
+      setError(null)
+      
+      // Get the user's session token
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!session) {
+        throw new Error('Not authenticated')
+      }
+
+      const response = await fetch('/api/files', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch files')
+      }
+
+      setAllUserFiles(data.files || [])
+    } catch (err) {
+      console.error('Error fetching files:', err)
+      setError(err.message || 'Failed to fetch files')
+    } finally {
+      setLoadingFiles(false)
+    }
+  }
 
   // Show auth screen if not authenticated
   if (authLoading) {
@@ -102,6 +145,9 @@ function App() {
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
+      
+      // Refresh the complete file list
+      await fetchAllUserFiles()
     } catch (err) {
       setError(err.message || 'Failed to upload file')
       
@@ -183,6 +229,29 @@ function App() {
     if (type?.includes('text')) return '📝'
     if (type?.includes('zip') || type?.includes('rar')) return '📦'
     return '📎'
+  }
+
+  const extractOriginalFileName = (storedPath) => {
+    // Extract original filename from stored path like "userId/timestamp-originalname.ext"
+    const parts = storedPath.split('/')
+    if (parts.length > 1) {
+      const fileName = parts[parts.length - 1]
+      // Remove timestamp prefix (format: timestamp-filename)
+      const timestampMatch = fileName.match(/^\d+-(.+)$/)
+      return timestampMatch ? timestampMatch[1] : fileName
+    }
+    return storedPath
+  }
+
+  const getFileTypeFromName = (fileName) => {
+    const ext = fileName.toLowerCase().split('.').pop()
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'].includes(ext)) return 'image'
+    if (['mp4', 'mov', 'avi', 'mkv', 'wmv', 'flv', 'webm'].includes(ext)) return 'video'
+    if (['mp3', 'wav', 'aac', 'flac', 'ogg', 'm4a'].includes(ext)) return 'audio'
+    if (ext === 'pdf') return 'pdf'
+    if (['txt', 'md', 'rtf'].includes(ext)) return 'text'
+    if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) return 'archive'
+    return 'document'
   }
 
   return (
@@ -301,6 +370,64 @@ function App() {
             </div>
           </div>
         )}
+
+        <div className="files-section">
+          <div className="section-header">
+            <h2>All Your Files</h2>
+            <button 
+              onClick={fetchAllUserFiles} 
+              className="refresh-button"
+              disabled={loadingFiles}
+            >
+              {loadingFiles ? '🔄' : '🔄'} Refresh
+            </button>
+          </div>
+          
+          {loadingFiles ? (
+            <div className="loading-files">
+              <div className="loading-spinner">Loading files...</div>
+            </div>
+          ) : allUserFiles.length > 0 ? (
+            <div className="files-list">
+              {allUserFiles.map((file, index) => {
+                const originalName = extractOriginalFileName(file.name)
+                const fileType = getFileTypeFromName(originalName)
+                return (
+                  <div key={index} className="file-item">
+                    <span className="file-icon">{getFileIcon(fileType)}</span>
+                    <div className="file-item-info">
+                      <div className="file-item-name">{originalName}</div>
+                      <div className="file-item-details">
+                        {file.size && (
+                          <span className="file-item-size">{formatFileSize(file.size)}</span>
+                        )}
+                        {file.createdAt && (
+                          <span className="file-item-date">
+                            {new Date(file.createdAt).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <a 
+                      href={file.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="view-link"
+                    >
+                      View
+                    </a>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="no-files">
+              <div className="no-files-icon">📁</div>
+              <p>No files uploaded yet</p>
+              <p className="no-files-subtitle">Upload your first file using the button above</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
