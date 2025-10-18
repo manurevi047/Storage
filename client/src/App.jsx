@@ -17,6 +17,10 @@ function App() {
   const [success, setSuccess] = useState(null)
   const [showPaymentSuccess, setShowPaymentSuccess] = useState(false)
   const [previewFile, setPreviewFile] = useState(null)
+  const [notes, setNotes] = useState([])
+  const [loadingNotes, setLoadingNotes] = useState(false)
+  const [showAddNote, setShowAddNote] = useState(false)
+  const [editingNote, setEditingNote] = useState(null)
   const fileInputRef = useRef(null)
 
   // Check if returning from payment
@@ -31,6 +35,7 @@ function App() {
   useEffect(() => {
     if (user) {
       fetchAllUserFiles()
+      fetchNotes()
     }
   }, [user])
 
@@ -307,6 +312,132 @@ function App() {
     setPreviewFile(null)
   }
 
+  // Notes functions
+  const fetchNotes = async () => {
+    try {
+      setLoadingNotes(true)
+      setError(null)
+      
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!session) {
+        throw new Error('Not authenticated')
+      }
+
+      const response = await fetch('/api/notes', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch notes')
+      }
+
+      setNotes(data.notes || [])
+    } catch (err) {
+      console.error('Error fetching notes:', err)
+      setError(err.message || 'Failed to fetch notes')
+    } finally {
+      setLoadingNotes(false)
+    }
+  }
+
+  const createNote = async (title, content) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!session) {
+        throw new Error('Not authenticated')
+      }
+
+      const response = await fetch('/api/notes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ title, content })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create note')
+      }
+
+      setNotes([data.note, ...notes])
+      setShowAddNote(false)
+      setSuccess('Note created successfully!')
+    } catch (err) {
+      console.error('Error creating note:', err)
+      setError(err.message || 'Failed to create note')
+    }
+  }
+
+  const updateNote = async (id, title, content) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!session) {
+        throw new Error('Not authenticated')
+      }
+
+      const response = await fetch(`/api/notes/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ title, content })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update note')
+      }
+
+      setNotes(notes.map(note => note.id === id ? data.note : note))
+      setEditingNote(null)
+      setSuccess('Note updated successfully!')
+    } catch (err) {
+      console.error('Error updating note:', err)
+      setError(err.message || 'Failed to update note')
+    }
+  }
+
+  const deleteNote = async (id) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!session) {
+        throw new Error('Not authenticated')
+      }
+
+      const response = await fetch(`/api/notes/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to delete note')
+      }
+
+      setNotes(notes.filter(note => note.id !== id))
+      setSuccess('Note deleted successfully!')
+    } catch (err) {
+      console.error('Error deleting note:', err)
+      setError(err.message || 'Failed to delete note')
+    }
+  }
+
   return (
     <div className="app">
       <div className="container">
@@ -480,6 +611,94 @@ function App() {
           )}
         </div>
 
+        {/* Notes Section */}
+        <div className="notes-section">
+          <div className="section-header">
+            <h2>📝 Notes</h2>
+            <button 
+              onClick={() => setShowAddNote(true)} 
+              className="add-note-button"
+            >
+              + Add Note
+            </button>
+          </div>
+          
+          {loadingNotes ? (
+            <div className="loading-notes">
+              <div className="loading-spinner">Loading notes...</div>
+            </div>
+          ) : notes.length > 0 ? (
+            <div className="notes-list">
+              {notes.map((note) => (
+                <div key={note.id} className="note-item">
+                  <div className="note-content">
+                    <h3 className="note-title">{note.title}</h3>
+                    <p className="note-text">{note.content}</p>
+                    <div className="note-meta">
+                      <span className="note-date">
+                        {new Date(note.updated_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="note-actions">
+                    <button 
+                      onClick={() => setEditingNote(note)}
+                      className="edit-note-button"
+                    >
+                      ✏️ Edit
+                    </button>
+                    <button 
+                      onClick={() => deleteNote(note.id)}
+                      className="delete-note-button"
+                    >
+                      🗑️ Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="no-notes">
+              <div className="no-notes-icon">📝</div>
+              <p>No notes yet</p>
+              <p className="no-notes-subtitle">Create your first note using the button above</p>
+            </div>
+          )}
+        </div>
+
+        {/* Add Note Modal */}
+        {showAddNote && (
+          <div className="modal-overlay" onClick={() => setShowAddNote(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>Add New Note</h3>
+                <button onClick={() => setShowAddNote(false)} className="close-button">×</button>
+              </div>
+              <div className="modal-body">
+                <AddNoteForm onSubmit={createNote} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Note Modal */}
+        {editingNote && (
+          <div className="modal-overlay" onClick={() => setEditingNote(null)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>Edit Note</h3>
+                <button onClick={() => setEditingNote(null)} className="close-button">×</button>
+              </div>
+              <div className="modal-body">
+                <EditNoteForm 
+                  note={editingNote} 
+                  onSubmit={(title, content) => updateNote(editingNote.id, title, content)}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* File Preview Modal */}
         {previewFile && (
           <div className="preview-modal" onClick={closePreview}>
@@ -520,6 +739,122 @@ function App() {
         )}
       </div>
     </div>
+  )
+}
+
+// Add Note Form Component
+function AddNoteForm({ onSubmit }) {
+  const [title, setTitle] = useState('')
+  const [content, setContent] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!title.trim() || !content.trim()) return
+    
+    setIsSubmitting(true)
+    try {
+      await onSubmit(title.trim(), content.trim())
+      setTitle('')
+      setContent('')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="note-form">
+      <div className="form-group">
+        <label htmlFor="title">Title</label>
+        <input
+          id="title"
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Enter note title..."
+          required
+          className="form-input"
+        />
+      </div>
+      <div className="form-group">
+        <label htmlFor="content">Content</label>
+        <textarea
+          id="content"
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="Enter note content..."
+          rows="6"
+          required
+          className="form-textarea"
+        />
+      </div>
+      <div className="form-actions">
+        <button 
+          type="submit" 
+          disabled={isSubmitting || !title.trim() || !content.trim()}
+          className="submit-button"
+        >
+          {isSubmitting ? 'Creating...' : 'Create Note'}
+        </button>
+      </div>
+    </form>
+  )
+}
+
+// Edit Note Form Component
+function EditNoteForm({ note, onSubmit }) {
+  const [title, setTitle] = useState(note.title)
+  const [content, setContent] = useState(note.content)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!title.trim() || !content.trim()) return
+    
+    setIsSubmitting(true)
+    try {
+      await onSubmit(title.trim(), content.trim())
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="note-form">
+      <div className="form-group">
+        <label htmlFor="edit-title">Title</label>
+        <input
+          id="edit-title"
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Enter note title..."
+          required
+          className="form-input"
+        />
+      </div>
+      <div className="form-group">
+        <label htmlFor="edit-content">Content</label>
+        <textarea
+          id="edit-content"
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="Enter note content..."
+          rows="6"
+          required
+          className="form-textarea"
+        />
+      </div>
+      <div className="form-actions">
+        <button 
+          type="submit" 
+          disabled={isSubmitting || !title.trim() || !content.trim()}
+          className="submit-button"
+        >
+          {isSubmitting ? 'Updating...' : 'Update Note'}
+        </button>
+      </div>
+    </form>
   )
 }
 

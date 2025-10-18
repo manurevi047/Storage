@@ -289,6 +289,140 @@ app.get('/api/files', verifyAuth, async (req, res) => {
   }
 });
 
+// Notes API endpoints
+app.get('/api/notes', verifyAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    const { data, error } = await supabase
+      .from('notes')
+      .select('*')
+      .eq('user_id', userId)
+      .order('updated_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    res.json({ notes: data || [] });
+
+  } catch (error) {
+    console.error('Error fetching notes:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch notes',
+      details: error.message 
+    });
+  }
+});
+
+app.post('/api/notes', verifyAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { title, content } = req.body;
+
+    if (!title || !content) {
+      return res.status(400).json({ 
+        error: 'Title and content are required' 
+      });
+    }
+
+    const noteData = {
+      id: crypto.randomUUID(),
+      title,
+      content,
+      user_id: userId,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    const { data, error } = await supabase
+      .from('notes')
+      .insert(noteData)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    res.json({ note: data });
+
+  } catch (error) {
+    console.error('Error creating note:', error);
+    res.status(500).json({ 
+      error: 'Failed to create note',
+      details: error.message 
+    });
+  }
+});
+
+app.put('/api/notes/:id', verifyAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const noteId = req.params.id;
+    const { title, content } = req.body;
+
+    if (!title || !content) {
+      return res.status(400).json({ 
+        error: 'Title and content are required' 
+      });
+    }
+
+    const updateData = {
+      title,
+      content,
+      updated_at: new Date().toISOString()
+    };
+
+    const { data, error } = await supabase
+      .from('notes')
+      .update(updateData)
+      .eq('id', noteId)
+      .eq('user_id', userId)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    res.json({ note: data });
+
+  } catch (error) {
+    console.error('Error updating note:', error);
+    res.status(500).json({ 
+      error: 'Failed to update note',
+      details: error.message 
+    });
+  }
+});
+
+app.delete('/api/notes/:id', verifyAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const noteId = req.params.id;
+
+    const { error } = await supabase
+      .from('notes')
+      .delete()
+      .eq('id', noteId)
+      .eq('user_id', userId);
+
+    if (error) {
+      throw error;
+    }
+
+    res.json({ success: true });
+
+  } catch (error) {
+    console.error('Error deleting note:', error);
+    res.status(500).json({ 
+      error: 'Failed to delete note',
+      details: error.message 
+    });
+  }
+});
+
 // Serve static files from the React app (for production)
 // Important: Place AFTER API routes so API takes precedence
 const clientBuildPath = join(__dirname, '../client/dist');
