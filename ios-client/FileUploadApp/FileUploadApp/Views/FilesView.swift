@@ -46,7 +46,9 @@ struct FilesView: View {
                 } else {
                     List {
                         ForEach(files) { file in
-                            FileRowView(file: file)
+                            FileRowView(file: file) {
+                                deleteFile(file)
+                            }
                         }
                         .onDelete(perform: deleteFiles)
                     }
@@ -181,10 +183,22 @@ struct FilesView: View {
             }
         }
     }
+    
+    private func deleteFile(_ file: FileItem) {
+        Task {
+            let success = await supabaseManager.deleteFile(path: file.path)
+            if success {
+                await MainActor.run {
+                    files.removeAll { $0.id == file.id }
+                }
+            }
+        }
+    }
 }
 
 struct FileRowView: View {
     let file: FileItem
+    let onDelete: () -> Void
     
     var body: some View {
         HStack {
@@ -224,6 +238,13 @@ struct FileRowView: View {
             }
             
             Spacer()
+            
+            Button(action: onDelete) {
+                Image(systemName: "trash")
+                    .foregroundColor(.red)
+                    .font(.system(size: 16))
+            }
+            .buttonStyle(PlainButtonStyle())
         }
         .padding(.vertical, 4)
     }
