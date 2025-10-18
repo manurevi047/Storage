@@ -185,11 +185,17 @@ struct FilesView: View {
     }
     
     private func deleteFile(_ file: FileItem) {
+        print("🗑️ FilesView: Deleting file: \(file.name)")
+        print("🗑️ FilesView: File path: \(file.path)")
+        
         Task {
             let success = await supabaseManager.deleteFile(path: file.path)
+            print("🗑️ FilesView: Delete result: \(success)")
+            
             if success {
                 await MainActor.run {
                     files.removeAll { $0.id == file.id }
+                    print("🗑️ FilesView: File removed from local list")
                 }
             }
         }

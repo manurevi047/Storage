@@ -18,7 +18,7 @@ class SupabaseManager: ObservableObject {
         // ⚠️ IMPORTANT: Replace this placeholder with your real ANON key from Supabase Dashboard
         // Go to: Supabase Dashboard → Settings → API → Copy "anon public" key
         // The real key should be much longer and start with "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-        let supabaseKey = "PLACEHOLDER_ANON_KEY_REPLACE_WITH_REAL_KEY_FROM_SUPABASE_DASHBOARD"
+        let supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bHZheGJjdm92eGpldXRyY2RzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyMzI2NTgsImV4cCI6MjA3NTgwODY1OH0._J_ftkv-FpIqNa3pOONc8maySpbnRtBWrYW15IHwiaE"
         
         // Check if placeholder key is still being used
         if supabaseKey == "PLACEHOLDER_ANON_KEY_REPLACE_WITH_REAL_KEY_FROM_SUPABASE_DASHBOARD" {
@@ -392,15 +392,16 @@ class SupabaseManager: ObservableObject {
             let fileItems = await withTaskGroup(of: FileItem.self, returning: [FileItem].self) { [self] group in
                 for file in files {
                     group.addTask {
-                        // Get public URL for each file
+                        // Get public URL for each file using full path
+                        let fullPath = "\(user.id.uuidString)/\(file.name)"
                         let publicURL = try? self.supabase.storage
                             .from("uploads")
-                            .getPublicURL(path: file.name)
+                            .getPublicURL(path: fullPath)
                         
                         return FileItem(
                             id: UUID().uuidString,
                             name: file.name,
-                            path: file.name,
+                            path: "\(user.id.uuidString)/\(file.name)", // Full path with user ID
                             size: 0, // Size not available in newer Supabase API
                             userId: user.id.uuidString,
                             createdAt: file.createdAt ?? Date(),
@@ -427,12 +428,15 @@ class SupabaseManager: ObservableObject {
     
     func deleteFile(path: String) async -> Bool {
         do {
+            print("🗑️ Attempting to delete file with path: \(path)")
             try await supabase.storage
                 .from("uploads")
                 .remove(paths: [path])
             
+            print("✅ File deleted successfully from Supabase Storage")
             return true
         } catch {
+            print("❌ Failed to delete file: \(error.localizedDescription)")
             await MainActor.run {
                 self.errorMessage = error.localizedDescription
             }
