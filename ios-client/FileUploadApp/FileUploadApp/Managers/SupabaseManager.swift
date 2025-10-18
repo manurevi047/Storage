@@ -14,8 +14,17 @@ class SupabaseManager: ObservableObject {
     private init() {
         // Using ANON key for proper user authentication
         let supabaseURL = URL(string: "https://kylvaxbcvovxjeutrcds.supabase.co")!
-        // Using ANON key for proper user authentication (not service key)
-        let supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5bHZheGJjdm92eGpldXRyY2RzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyMzI2NTgsImV4cCI6MjA3NTgwODY1OH0.Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8" // Replace with your ANON key from Supabase Dashboard > Settings > API
+        
+        // ⚠️ IMPORTANT: Replace this placeholder with your real ANON key from Supabase Dashboard
+        // Go to: Supabase Dashboard → Settings → API → Copy "anon public" key
+        // The real key should be much longer and start with "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        let supabaseKey = "PLACEHOLDER_ANON_KEY_REPLACE_WITH_REAL_KEY_FROM_SUPABASE_DASHBOARD"
+        
+        // Check if placeholder key is still being used
+        if supabaseKey == "PLACEHOLDER_ANON_KEY_REPLACE_WITH_REAL_KEY_FROM_SUPABASE_DASHBOARD" {
+            print("❌ ERROR: You need to replace the placeholder ANON key with your real Supabase ANON key!")
+            print("📋 Instructions: See FIX_API_KEY_ERROR.md file")
+        }
         
         self.supabase = SupabaseClient(supabaseURL: supabaseURL, supabaseKey: supabaseKey)
     }
