@@ -3,28 +3,26 @@
 ## The Problem
 Files are not being deleted from Supabase Storage because Row Level Security (RLS) is likely blocking the delete operations.
 
-## Quick Fix
+## Quick Fix (If you get "must be owner" error)
 Run this SQL in your Supabase SQL Editor:
 
 ```sql
--- Check current RLS status
-SELECT 
-    schemaname, 
-    tablename, 
-    rowsecurity as rls_enabled
-FROM pg_tables 
-WHERE tablename = 'objects' AND schemaname = 'storage';
+-- Drop existing restrictive policies
+DROP POLICY IF EXISTS "Users can upload their own files" ON storage.objects;
+DROP POLICY IF EXISTS "Users can view their own files" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete their own files" ON storage.objects;
 
--- If RLS is enabled (true), disable it:
+-- Create a permissive policy that allows all operations
+CREATE POLICY "Allow all operations" ON storage.objects
+    FOR ALL USING (true) WITH CHECK (true);
+```
+
+## Alternative Fix (If you have owner permissions)
+If you have owner permissions on the storage.objects table:
+
+```sql
+-- Disable RLS to allow file deletion
 ALTER TABLE storage.objects DISABLE ROW LEVEL SECURITY;
-
--- Verify the fix
-SELECT 
-    schemaname, 
-    tablename, 
-    rowsecurity as rls_enabled
-FROM pg_tables 
-WHERE tablename = 'objects' AND schemaname = 'storage';
 ```
 
 ## Alternative Fix (if you want to keep RLS)
